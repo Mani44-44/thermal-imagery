@@ -18,7 +18,7 @@ dependencies = [
     "pyyaml",
     "tqdm",
     "matplotlib",
-    "dvc",
+    "dvc[s3]",
     "scipy>=1.17.1",
 ]
 

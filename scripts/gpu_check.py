@@ -16,6 +16,8 @@ import torch
 from transformers import RTDetrV2ForObjectDetection
 
 ROOT = Path(__file__).resolve().parents[1]
+# torch.AcceleratorError only exists in newer PyTorch (e.g. not in Kaggle's preinstalled one).
+OOM_ERRORS = (torch.OutOfMemoryError, getattr(torch, "AcceleratorError", RuntimeError))
 
 
 def make_batch(batch_size: int, size: int, device: torch.device):
@@ -47,7 +49,7 @@ def bench(model, optimizer, batch_size, size, device, amp_dtype, steps=10, warmu
             optimizer.zero_grad(set_to_none=True)
         torch.cuda.synchronize()
         elapsed = time.perf_counter() - start
-    except (torch.OutOfMemoryError, torch.AcceleratorError) as e:
+    except OOM_ERRORS as e:
         if "out of memory" not in str(e):
             raise
         optimizer.zero_grad(set_to_none=True)
@@ -99,6 +101,7 @@ def main():
         return
     best = rows[-1]
     out = ROOT / "docs" / "compute.md"
+    out.parent.mkdir(exist_ok=True)
     if not out.exists():
         out.write_text("# Compute measurements\n\nTraining probe from `scripts/gpu_check.py` "
                        "(random data, AMP, AdamW).\n\n| Date | Device | Model | Size | AMP | Max batch "
