@@ -47,3 +47,4 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["regression: golden-set model regression gate (needs data + a model)"]
