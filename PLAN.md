@@ -60,16 +60,12 @@ Tasks
 Tasks
 1. **Conversion script** (`src/data/convert.py`). Turns the source annotations (LLVIP is VOC XML) into **COCO JSON**, one file per split. This is what the HF image processor and the eval harness both consume. All modalities share one annotation file because the pairs are registered.
    - The dataset class takes a `modality` argument: `rgb` (visible), `thermal` (IR replicated to 3 channels so it works with pretrained weights) or `fused4` (RGB+T **stacked on the fly**, not saved to disk; see the compute plan).
-2. **Recover scene IDs.** Don't assume the dataset ships them. Methods, in order of preference:
-   1. Scene info in the filename or folder structure, if present.
-   2. Contiguous filename ranges or timestamp gaps.
-   3. Clustering image embeddings (CLIP or DINOv2 via FiftyOne `compute_embeddings`), then spot-checking each cluster by eye.
-   - Save `scene_id` per image to `data/meta/scenes.csv`.
-3. **Scene-level split** (`src/data/split.py`): train/val/test at about 70/15/15 **by scene**, stratified so that every split gets some brighter scenes where possible.
+2. **Scene IDs.** *(Found in Phase 0: the two-digit filename prefix 01–26 matches the 26 scenes; see `docs/data-checks.md`.)* Confirm by viewing a few images per prefix in FiftyOne, then save `scene_id` per image to `data/meta/scenes.csv`.
+3. **Splits** (`src/data/split.py`). *(Found in Phase 0: the official test split is already scene-disjoint: 19–24 and 26.)* Keep the official test set, which also keeps results comparable with papers. Carve **val** out of the train scenes (01–18, 25) by holding out 2–3 whole scenes, ideally including one of the daytime scenes if they fall in train. Re-measure the alignment offset per scene (scene 08 showed ~9 px).
    - **Leakage checks** (as tests in `tests/test_splits.py`):
      - No `scene_id` appears in more than one split.
      - A near-duplicate scan across splits (perceptual hash or embedding cosine > threshold) returns nothing, or every hit is explained.
-   - Also keep the **official LLVIP split** as a second config, so results can be compared with published papers. Report both.
+   - Add an **"RGB-visible" subset** flag on test boxes (e.g. by local contrast inside the box in the visible image). Some dark-scene pedestrians are nearly invisible in RGB, so RGB-only recall needs to be reported on both all boxes and RGB-visible boxes.
 4. **Condition bins.** Measure the mean luminance of each RGB image (optionally also the local contrast). Bin it into `dark / dim / bright` using fixed thresholds saved in `params.yaml`. Don't rely on metadata. LLVIP is mostly night, so check how many images end up in each bin. If the bright bin is tiny, the "low light vs normal" contrast needs FLIR (Phase 7). Note this as a limitation.
 5. **Golden set.** Carve out about 300–500 images from **test scenes only**, covering every condition bin and object size bucket. Freeze it **now**, before any training or label cleaning happens:
    - Save the file list plus the SHA-256 of each image and label to `golden/manifest.json`, tracked in DVC.
