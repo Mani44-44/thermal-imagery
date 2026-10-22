@@ -2,3 +2,6 @@
     type = "hardlink,symlink"
 [core]
     autostage = true
+    remote = local
+['remote "local"']
+    url = C:/Users/Yash/dvc-storage/thermal-imagery

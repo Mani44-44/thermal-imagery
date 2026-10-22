@@ -6,11 +6,8 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 
-# Data and model artifacts (tracked by DVC, never git)
-/data/raw/*
-!/data/raw/*.dvc
-!/data/raw/*.sha256
-!/data/raw/.gitignore
+# Data and model artifacts (tracked by DVC, never git). DVC writes its own per-folder .gitignore
+# for each tracked output; don't use "dir/*" + "!" patterns here, DVC's ignore check misreads them.
 /data/processed/
 /runs/
 /checkpoints/
