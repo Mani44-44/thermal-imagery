@@ -23,11 +23,11 @@ dependencies = [
     "kaggle>=2.2.4",
 ]
 
-[project.optional-dependencies]
-tools = ["fiftyone"]
+
+
 
 [dependency-groups]
-dev = ["pytest", "ruff", "pre-commit", "ipykernel"]
+dev = ["pytest", "ruff", "pre-commit", "ipykernel", "fiftyone"]
 
 [tool.uv]
 package = false

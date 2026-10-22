@@ -195,6 +195,8 @@ def main():
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--limit", type=int, help="use only the first N train images (overfit tests)")
+    p.add_argument("--locations", help="comma-separated train locations to use (out-of-fold models)")
+    p.add_argument("--train-ann", default="train", help="training annotation file name (e.g. train_v2)")
     p.add_argument("--val-split", default="val", help="annotation file to select on (val / train)")
     p.add_argument("--time-limit-hours", type=float, default=0, help="stop cleanly after this; resume later")
     p.add_argument("--name", default=None)
@@ -219,7 +221,10 @@ def main():
     amp_dtype = {"bf16": torch.bfloat16, "fp16": torch.float16}.get(amp)
     scaler = torch.amp.GradScaler("cuda", enabled=amp == "fp16")
 
-    train_coco = json.loads((args.ann_dir / "train.json").read_text())
+    train_coco = json.loads((args.ann_dir / f"{args.train_ann}.json").read_text())
+    if args.locations:
+        locs = {int(x) for x in args.locations.split(",")}
+        train_coco = {**train_coco, "images": [i for i in train_coco["images"] if i["location"] in locs]}
     val_coco = json.loads((args.ann_dir / f"{args.val_split}.json").read_text())
     if args.limit and args.val_split == "train":  # overfit test: select on the same images
         keep = {i["id"] for i in sorted(train_coco["images"], key=lambda i: i["id"])[:args.limit]}

@@ -3701,13 +3701,9 @@ dependencies = [
     { name = "transformers" },
 ]
 
-[package.optional-dependencies]
-tools = [
-    { name = "fiftyone" },
-]
-
 [package.dev-dependencies]
 dev = [
+    { name = "fiftyone" },
     { name = "ipykernel" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -3719,7 +3715,6 @@ requires-dist = [
     { name = "accelerate" },
     { name = "dvc", extras = ["s3"] },
     { name = "ensemble-boxes" },
-    { name = "fiftyone", marker = "extra == 'tools'" },
     { name = "kaggle", specifier = ">=2.2.4" },
     { name = "matplotlib" },
     { name = "numpy" },
@@ -3735,10 +3730,10 @@ requires-dist = [
     { name = "tqdm" },
     { name = "transformers", specifier = ">=4.50" },
 ]
-provides-extras = ["tools"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "fiftyone" },
     { name = "ipykernel" },
     { name = "pre-commit" },
     { name = "pytest" },
