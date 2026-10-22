@@ -98,8 +98,9 @@ def load_trained(run_dir: Path, modality: str) -> RTDetrV2ForObjectDetection:
     return RTDetrV2ForObjectDetection.from_pretrained(run_dir)
 
 
-def read_input(file_name: str, modality: str, root: Path = LLVIP) -> np.ndarray:
-    """HxWxC uint8 array at native resolution for one image (file_name like 'test/190001.jpg')."""
+def read_input(file_name: str, modality: str, root: Path = LLVIP, replicate: bool = True) -> np.ndarray:
+    """HxWxC uint8 array at native resolution for one image (file_name like 'test/190001.jpg').
+    replicate=False keeps thermal single-channel (cheaper to crop/resize; see `to_tensor`)."""
     if modality in ("rgb", "fused4"):
         vis = cv2.cvtColor(cv2.imread(str(root / "visible" / file_name)), cv2.COLOR_BGR2RGB)
     if modality in ("thermal", "fused4"):
@@ -107,7 +108,7 @@ def read_input(file_name: str, modality: str, root: Path = LLVIP) -> np.ndarray:
     if modality == "rgb":
         return vis
     if modality == "thermal":
-        return np.repeat(ir[..., None], 3, axis=2)
+        return np.repeat(ir[..., None], 3, axis=2) if replicate else ir[..., None]
     return np.concatenate([vis, ir[..., None]], axis=2)
 
 
@@ -116,7 +117,10 @@ def to_tensor(img: np.ndarray, size: int = INPUT_SIZE) -> torch.Tensor:
     resized = cv2.resize(img, (size, size), interpolation=cv2.INTER_LINEAR)
     if resized.ndim == 2:
         resized = resized[..., None]
-    return torch.from_numpy(resized).permute(2, 0, 1).float().div_(255)
+    x = torch.from_numpy(resized).permute(2, 0, 1)
+    if x.shape[0] == 1:  # single-channel thermal -> 3 channels for the pretrained backbone
+        x = x.expand(3, -1, -1)
+    return x.float().div_(255)
 
 
 @torch.no_grad()

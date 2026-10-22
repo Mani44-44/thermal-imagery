@@ -51,11 +51,14 @@ class LLVIPDetection(Dataset):
 
     def __getitem__(self, i):
         im = self.images[i]
-        img = read_input(im["file_name"], self.modality, self.root)      # H x W x C uint8
+        img = read_input(im["file_name"], self.modality, self.root, replicate=False)  # HxWxC uint8
         boxes = np.array(self.boxes[im["id"]], np.float32).reshape(-1, 4)  # xywh px
         if self.train:
             img, boxes = augment(img, boxes, self.modality)
-        h, w = img.shape[:2]
+        h, w = img.shape[:2]  # boxes are normalised by the (possibly cropped) native size
+        if self.train:
+            img = photometric(cv2.resize(img, (INPUT_SIZE, INPUT_SIZE), interpolation=cv2.INTER_LINEAR),
+                              self.modality)
         x = to_tensor(img)
         cxcywh = np.stack([(boxes[:, 0] + boxes[:, 2] / 2) / w, (boxes[:, 1] + boxes[:, 3] / 2) / h,
                            boxes[:, 2] / w, boxes[:, 3] / h], 1) if len(boxes) else np.zeros((0, 4), np.float32)
@@ -65,8 +68,7 @@ class LLVIPDetection(Dataset):
 
 
 def augment(img: np.ndarray, boxes: np.ndarray, modality: str):
-    """Geometric ops hit all channels identically; colour jitter only the RGB channels and a mild
-    brightness/contrast change on the thermal channel (hue/saturation mean nothing there)."""
+    """Geometric ops (flip, crop) at native resolution; they hit all channels identically."""
     h, w = img.shape[:2]
     if random.random() < 0.5:  # horizontal flip
         img = img[:, ::-1]
@@ -89,18 +91,26 @@ def augment(img: np.ndarray, boxes: np.ndarray, modality: str):
                     img, boxes = img[y0:y0 + ch, x0:x0 + cw], b[ok]
                     break
     img = np.ascontiguousarray(img)
-    if modality in ("rgb", "fused4") and random.random() < 0.8:
-        rgb = img[..., :3]
-        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV).astype(np.float32)
-        hsv[..., 0] = (hsv[..., 0] + random.uniform(-5, 5)) % 180
-        hsv[..., 1] *= random.uniform(0.7, 1.3)
-        hsv[..., 2] *= random.uniform(0.7, 1.3)
-        img[..., :3] = cv2.cvtColor(np.clip(hsv, 0, 255).astype(np.uint8), cv2.COLOR_HSV2RGB)
-    ir_ch = {"thermal": slice(0, 3), "fused4": slice(3, 4)}.get(modality)
-    if ir_ch is not None and random.random() < 0.5:
-        a, b = random.uniform(0.9, 1.1), random.uniform(-10, 10)
-        img[..., ir_ch] = np.clip(img[..., ir_ch].astype(np.float32) * a + b, 0, 255).astype(np.uint8)
     return img, boxes
+
+
+def photometric(img: np.ndarray, modality: str) -> np.ndarray:
+    """Colour jitter on the (already resized) image, via uint8 lookup tables. RGB channels get
+    hue/saturation/value jitter; the thermal channel only a mild brightness/contrast change (hue
+    and saturation mean nothing there)."""
+    if modality in ("rgb", "fused4") and random.random() < 0.8:
+        hue, sat, val = cv2.split(cv2.cvtColor(np.ascontiguousarray(img[..., :3]), cv2.COLOR_RGB2HSV))
+        x = np.arange(256, dtype=np.float32)
+        lut_h = ((x + random.uniform(-5, 5)) % 180).astype(np.uint8)
+        lut_s = np.clip(x * random.uniform(0.7, 1.3), 0, 255).astype(np.uint8)
+        lut_v = np.clip(x * random.uniform(0.7, 1.3), 0, 255).astype(np.uint8)
+        hsv = cv2.merge([cv2.LUT(hue, lut_h), cv2.LUT(sat, lut_s), cv2.LUT(val, lut_v)])
+        img[..., :3] = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    ir_ch = {"thermal": slice(0, 1), "fused4": slice(3, 4)}.get(modality)
+    if ir_ch is not None and random.random() < 0.5:
+        lut = np.clip(np.arange(256) * random.uniform(0.9, 1.1) + random.uniform(-10, 10), 0, 255).astype(np.uint8)
+        img[..., ir_ch] = cv2.LUT(np.ascontiguousarray(img[..., ir_ch]), lut).reshape(img[..., ir_ch].shape)
+    return img
 
 
 def collate(batch):
