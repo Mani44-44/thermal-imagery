@@ -21,7 +21,7 @@
 | Disk | **25 GB free on C:** | 20 GB persisted + scratch | same |
 | Limits | none, but the laptop may throttle on long runs | 30 GPU-h/week, 12 h/session, idle timeout | same quota |
 
-Per card, the 4050 should be roughly as fast as a T4 or faster for mixed-precision training, and it's newer. **VRAM is the real limit, not speed.** RT-DETR's transformer decoder is memory-hungry, so on 6 GB expect small batches (estimate R18 at 640 px: batch 4–8 with AMP; R50: 2–4). **Measure this in Phase 0**, and use gradient accumulation to reach the effective batch size.
+Measured (see `docs/compute.md`): **one Kaggle T4 is ~1.4× faster than the 4050** (power-capped at 75 W) and fits a 4× larger batch. R18 trains at 19 img/s locally vs 27 img/s on a T4. **VRAM is the bigger limit locally.** RT-DETR's transformer decoder is memory-hungry, so on 6 GB the max batch at 640 px is 8 for R18 and 4 for R50 (measured in Phase 0). Use gradient accumulation to reach the effective batch size.
 
 **Split the work like this:**
 - **Local:** all development and debugging, data tooling (FiftyOne, CVAT, DVC), the eval harness, short training runs, R18 trainings, and **all latency benchmarks**. Latency must come from one fixed device, and the 4050 is the one you always have.
