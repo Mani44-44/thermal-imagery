@@ -20,6 +20,7 @@ dependencies = [
     "matplotlib",
     "dvc[s3]",
     "scipy>=1.17.1",
+    "kaggle>=2.2.4",
 ]
 
 [project.optional-dependencies]

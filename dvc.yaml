@@ -1,0 +1,59 @@
+stages:
+  stats:
+    cmd: uv run python -m src.data.stats
+    deps:
+      - src/data/stats.py
+      - src/data/llvip.py
+      - data/raw/LLVIP
+    outs:
+      - data/meta/image_stats.csv
+      - data/meta/box_stats.csv
+
+  locations:
+    cmd: uv run python -m src.data.locations
+    deps:
+      - src/data/locations.py
+      - src/data/dedup.py
+      - data/raw/LLVIP
+    outs:
+      - data/meta/locations.csv
+
+  split:
+    cmd: uv run python -m src.data.split
+    deps:
+      - src/data/split.py
+      - data/meta/image_stats.csv
+      - data/meta/box_stats.csv
+      - data/meta/locations.csv
+    params:
+      - data
+    outs:
+      - data/annotations/train.json
+      - data/annotations/val.json
+      - data/annotations/test.json
+      - data/meta/scenes.csv:
+          cache: false
+      - data/meta/norm.json:
+          cache: false
+
+  leakage:
+    cmd: uv run python -m src.data.dedup
+    deps:
+      - src/data/dedup.py
+      - data/annotations/train.json
+      - data/annotations/val.json
+      - data/annotations/test.json
+    outs:
+      - data/meta/cross_split_near_dups.csv:
+          cache: false
+
+  golden:
+    # Reuses the committed golden/manifest.json; it is only regenerated with --force.
+    cmd: uv run python -m src.data.golden
+    deps:
+      - src/data/golden.py
+      - data/annotations/test.json
+      - golden/manifest.json
+    outs:
+      - data/annotations/golden.json
+      - data/annotations/golden_ci.json

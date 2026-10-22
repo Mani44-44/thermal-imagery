@@ -45,3 +45,60 @@ In dark scenes, some labelled pedestrians are clearly visible in infrared but ne
 visible image (e.g. `081485`). Since labels are shared, the RGB-only model is scored against targets
 it may physically be unable to see. This is the effect the project is meant to measure, but report it
 explicitly (e.g. an "RGB-visible" subset) so RGB-only recall is interpreted fairly.
+
+# Phase 1 findings (2026-10-23)
+
+## Scenes are not quite locations: 25 and 26 are mixed
+
+A near-duplicate scan (256-bit infrared difference hash) found that filename prefixes **25 (train)** and
+**26 (test)** are grab-bags, not single scenes:
+- 25 holds frames shot at train locations 01–18 plus the daytime footage.
+- 26 holds frames shot at test locations 19–24.
+
+`src.data.locations` gives each 25/26 frame the location of its nearest pure-scene frame (hash
+distance ≤ 20): 179/423 of 25 and 307/533 of 26 were reassigned. The remaining frames, mostly
+daytime, keep 25/26 as their own location. **Location is the unit for the val split and for
+bootstrap CIs.**
+
+The first val choice (scene 12) leaked: 188 of its frames nearly duplicated scene-25 frames in
+train. After switching to location-based splits, the scan finds **0 cross-split near-duplicates**
+(threshold 12 bits), and there are no close train-test matches at all: the official split is clean.
+
+## Splits
+
+| Split | Locations | Images | Boxes | RGB-visible boxes |
+|---|---|---|---|---|
+| train | 1–10, 12, 13, 16–18, 25 | 10,377 | 30,238 | 95.6% |
+| val | 11 (dark), 14 (lit), 15 (dim) | 1,648 | 3,892 | 92.6% |
+| test (official) | 19–24, 26 | 3,463 | 8,302 | 92.0% |
+| golden (⊂ test) | all test locations | 402 | 979 | |
+| golden CI (⊂ golden) | all test locations | 151 | 371 | |
+
+## Labels
+
+- One class (person); 42,437 boxes, 7,727 marked truncated, none marked difficult.
+- 5 degenerate boxes (0 px wide) dropped: 020118, 020236, 090437, 091180, 170350.
+
+## Lighting conditions
+
+Measured by mean visible-image luminance: dark < 25, dim 25–60, lit ≥ 60.
+- Test: 1,144 dark / 1,224 dim / 1,095 lit.
+- "Lit" here means mostly street-lit night. Only location 25 (train) has real daytime footage, so the
+  project measures dark-vs-lit night, not night-vs-day.
+
+## Box sizes
+
+Pedestrians are large in LLVIP: median height 225 px, 5th percentile 124 px. COCO area bins put 93% of
+boxes in "large" (only 18 "small"), so size breakdowns use box height:
+small < 150 px, medium 150–250 px, large ≥ 250 px (native 1280×1024).
+
+## RGB-visible flag
+
+Contrast = max(|mean inside box − mean of surrounding ring|, std inside box) on the grayscale visible image.
+Crop montages showed boxes below about 8 are mostly unrecognisable silhouettes, and 9–12 are mostly
+recognisable. Threshold: 8, which marks about 4–8% of boxes per split as not RGB-visible. This is a
+heuristic, so RGB-only recall is reported on both all boxes and RGB-visible boxes.
+
+## Thermal normalisation
+
+Pooled over train: infrared mean 0.287, std 0.185 (0–1 scale), in `data/meta/norm.json`.

@@ -1,0 +1,19 @@
+# Phase 1: data
+data:
+  # Official LLVIP test scenes (19-24, 26) stay as test. Val = whole train *locations* held out,
+  # one per lighting condition (dark / dim / lit). Scene 25 mixes frames from train locations, so
+  # its frames follow their location (src.data.locations; see docs/data-checks.md).
+  val_locations: [11, 14, 15]
+  # Image lighting condition from mean visible-image luminance (0-255).
+  condition_bins: {dark: [0, 25], dim: [25, 60], lit: [60, 256]}
+  # Box size groups by box height in native 1280x1024 pixels. COCO area bins are useless here:
+  # 93% of LLVIP boxes are COCO "large".
+  size_bins: {small: [0, 150], medium: [150, 250], large: [250, 10000]}
+  # A box counts as "RGB-visible" if max(|mean inside - mean of surrounding ring|, std inside) on
+  # the visible image is at least this. Calibrated by eye on crop montages (docs/data-checks.md).
+  rgb_visible_min_contrast: 8.0
+
+golden:
+  size: 400        # images, drawn from test scenes, stratified by scene x condition
+  ci_size: 150     # subset used by CI (CPU), stratified the same way
+  seed: 1234

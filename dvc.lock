@@ -1,0 +1,164 @@
+schema: '2.0'
+stages:
+  stats:
+    cmd: uv run python -m src.data.stats
+    deps:
+    - path: data/raw/LLVIP
+      hash: md5
+      md5: 2761684fa03657eb51454108a530c419.dir
+      size: 4054277998
+      nfiles: 46465
+    - path: src/data/llvip.py
+      hash: md5
+      md5: df99971bd63e6cc0e2e834775ec4880c
+      size: 1741
+    - path: src/data/stats.py
+      hash: md5
+      md5: 70aaf55051f711737b7e54c0bd561edd
+      size: 3567
+    outs:
+    - path: data/meta/box_stats.csv
+      hash: md5
+      md5: 9db9b31bbfe1ce7a264ee6f14d6cdfc7
+      size: 4356084
+    - path: data/meta/image_stats.csv
+      hash: md5
+      md5: bb8916346676830ebfacbb9a134a0ad8
+      size: 696631
+  locations:
+    cmd: uv run python -m src.data.locations
+    deps:
+    - path: data/raw/LLVIP
+      hash: md5
+      md5: 2761684fa03657eb51454108a530c419.dir
+      size: 4054277998
+      nfiles: 46465
+    - path: src/data/dedup.py
+      hash: md5
+      md5: 77081cdd3c904ee401e6c68a27074740
+      size: 2179
+    - path: src/data/locations.py
+      hash: md5
+      md5: fb4a328888eb8c6d98ed8c5148ded5be
+      size: 2237
+    outs:
+    - path: data/meta/locations.csv
+      hash: md5
+      md5: d39af061bc4a9d789ea8473d4947311f
+      size: 250502
+  split:
+    cmd: uv run python -m src.data.split
+    deps:
+    - path: data/meta/box_stats.csv
+      hash: md5
+      md5: 9db9b31bbfe1ce7a264ee6f14d6cdfc7
+      size: 4356084
+    - path: data/meta/image_stats.csv
+      hash: md5
+      md5: bb8916346676830ebfacbb9a134a0ad8
+      size: 696631
+    - path: data/meta/locations.csv
+      hash: md5
+      md5: d39af061bc4a9d789ea8473d4947311f
+      size: 250502
+    - path: src/data/split.py
+      hash: md5
+      md5: eb9af993f0c13dc6d139c84534e3c0c8
+      size: 5751
+    params:
+      params.yaml:
+        data:
+          val_locations:
+          - 11
+          - 14
+          - 15
+          condition_bins:
+            dark:
+            - 0
+            - 25
+            dim:
+            - 25
+            - 60
+            lit:
+            - 60
+            - 256
+          size_bins:
+            small:
+            - 0
+            - 150
+            medium:
+            - 150
+            - 250
+            large:
+            - 250
+            - 10000
+          rgb_visible_min_contrast: 8.0
+    outs:
+    - path: data/annotations/test.json
+      hash: md5
+      md5: bf10bd84494e726ec507cd3f75ac44f5
+      size: 2065315
+    - path: data/annotations/train.json
+      hash: md5
+      md5: 0f31c8ad7f96a9d6ae9c3eec08c7eb5f
+      size: 7105926
+    - path: data/annotations/val.json
+      hash: md5
+      md5: 0d3996119b4dd2e6478996a598f2db34
+      size: 973632
+    - path: data/meta/norm.json
+      hash: md5
+      md5: 3bea9869d608f8f804cdbadf1f093050
+      size: 60
+    - path: data/meta/scenes.csv
+      hash: md5
+      md5: 608ba695cd73d38b0c87aa99a9aa161a
+      size: 516
+  leakage:
+    cmd: uv run python -m src.data.dedup
+    deps:
+    - path: data/annotations/test.json
+      hash: md5
+      md5: bf10bd84494e726ec507cd3f75ac44f5
+      size: 2065315
+    - path: data/annotations/train.json
+      hash: md5
+      md5: 0f31c8ad7f96a9d6ae9c3eec08c7eb5f
+      size: 7105926
+    - path: data/annotations/val.json
+      hash: md5
+      md5: 0d3996119b4dd2e6478996a598f2db34
+      size: 973632
+    - path: src/data/dedup.py
+      hash: md5
+      md5: 77081cdd3c904ee401e6c68a27074740
+      size: 2179
+    outs:
+    - path: data/meta/cross_split_near_dups.csv
+      hash: md5
+      md5: 69d70b3ecc71b3eb9fb76339a04709f9
+      size: 39
+  golden:
+    cmd: uv run python -m src.data.golden
+    deps:
+    - path: data/annotations/test.json
+      hash: md5
+      md5: bf10bd84494e726ec507cd3f75ac44f5
+      size: 2065315
+    - path: golden/manifest.json
+      hash: md5
+      md5: be7788c0486f545fc697feacff68d383
+      size: 117139
+    - path: src/data/golden.py
+      hash: md5
+      md5: 778bd37fe33f770d9b8b2765be9edb3e
+      size: 3634
+    outs:
+    - path: data/annotations/golden.json
+      hash: md5
+      md5: 5ba71a6bd450089c62b71ccc72824206
+      size: 242580
+    - path: data/annotations/golden_ci.json
+      hash: md5
+      md5: f18680bda7f88526c0dd9466405d88a9
+      size: 91736
