@@ -1,0 +1,48 @@
+[project]
+name = "thermal-imagery"
+version = "0.1.0"
+description = "RGB vs thermal vs fused pedestrian detection with RT-DETR on LLVIP"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "torch>=2.14",
+    "torchvision",
+    "transformers>=4.50",
+    "timm",
+    "accelerate",
+    "pycocotools",
+    "ensemble-boxes",
+    "numpy",
+    "pillow",
+    "opencv-python-headless",
+    "pandas",
+    "pyyaml",
+    "tqdm",
+    "matplotlib",
+    "dvc",
+    "scipy>=1.17.1",
+]
+
+[project.optional-dependencies]
+tools = ["fiftyone"]
+
+[dependency-groups]
+dev = ["pytest", "ruff", "pre-commit", "ipykernel"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
