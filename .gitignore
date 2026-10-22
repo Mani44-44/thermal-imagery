@@ -24,3 +24,6 @@ __pycache__/
 
 # Alignment panels contain dataset images
 /docs/alignment/
+
+# Kaggle job outputs and local runs
+/runs/
