@@ -1,0 +1,5 @@
+outs:
+- md5: aeaa4df11099e5f925861720b18820d6
+  size: 603211
+  hash: md5
+  path: flags.json

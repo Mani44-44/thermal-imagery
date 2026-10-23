@@ -1,0 +1,6 @@
+outs:
+- md5: f1dee4ac028719c612b50cfc3ae9113d.dir
+  size: 415614
+  nfiles: 2
+  hash: md5
+  path: cvat

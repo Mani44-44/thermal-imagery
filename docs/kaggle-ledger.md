@@ -9,9 +9,11 @@ LLVIP release) + private `yashmanisingh/llvip-thermal-imagery-annotations`.
 | 2026-10-23 | llvip-mirror-md5 | hash the mirror (CPU only) | – | – | 0.71 h used |
 | 2026-10-23 | tir-smoke-fused4 | end-to-end smoke test, stops after epoch 1 | 1 | ~15 min | |
 | 2026-10-23 | tir-smoke-fused4-resume | resume from smoke output, epoch 2 + predictions | 1 | ~12 min | 1.35 h used |
-| 2026-10-23 | tir-rgb-s1 | Phase 3 RGB, seed 1 | 24 | | |
-| 2026-10-23 | tir-thermal-s1 | Phase 3 thermal, seed 1 | 24 | | |
-| 2026-10-23 | tir-fused4-s1 | Phase 4 early fusion, seed 1 (queued for a free slot) | 24 | | |
+| 2026-10-23 | tir-rgb-s1 | Phase 3 RGB, seed 1 | 24 | 1.8 h training (38.5 img/s) | |
+| 2026-10-23 | tir-thermal-s1 | Phase 3 thermal, seed 1 | 24 | 2.0 h training (34.3 img/s) | |
+| 2026-10-23 | tir-fused4-s1 | Phase 4 early fusion, seed 1 | 24 | 2.65 h training (28.6 img/s) | |
+| 2026-10-23 | tir-thermal-s2 | seed 2 | 24 | | |
+| 2026-10-23 | tir-rgb-s2 | seed 2 | 24 | | 12.3 h used (while s2 running) |
 
 Measured on Kaggle (fused4, 2×T4, fp16): 13 img/s with the first data loader, 22 img/s after moving
 colour jitter after the resize (~8 min/epoch). The 4 Kaggle vCPUs limit data loading, not the GPUs.

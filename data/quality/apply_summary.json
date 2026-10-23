@@ -1,0 +1,11 @@
+{
+ "reviewed_images": 250,
+ "removed": 7,
+ "replaced": 25,
+ "added": 29,
+ "verdict_fixed": 43,
+ "verdict_no_error": 109,
+ "verdict_ambiguous": 98,
+ "boxes_v1": 30238,
+ "boxes_v2": 30260
+}
