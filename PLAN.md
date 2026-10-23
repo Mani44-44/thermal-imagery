@@ -17,7 +17,7 @@
 | 1 Data | `dvc repro`, leakage tests, golden manifest, EDA | met except EDA notebook | findings written to `docs/data-checks.md` instead of a notebook |
 | 2 Eval harness | zero-shot scored, metric unit tests, latency | met | `reports/zeroshot.md`, `tests/test_metrics.py` |
 | 3 Baselines | 2 models in DVC with CIs + latency | met | 2 seeds per arm, not 3 (s3 runs skipped/failed; see ledger); training ran on Kaggle, not as a DVC stage; outputs tracked in `results.dvc`, `models/*.dvc` |
-| 4 Fusion | `reports/comparison.md`, numbers traceable to DVC | met | late fusion uses NMS (beat WBF on val); FiftyOne error gallery not produced |
+| 4 Fusion | `reports/comparison.md`, numbers traceable to DVC | met | late fusion: WBF with a tuned score cut-off (val-best); an earlier untuned WBF lost to NMS (both kept in the report); FiftyOne error gallery not produced |
 | 5 Regression/CI | degraded model makes CI fail | met locally; GitHub run pending | `pytest -m regression` fails the fusion model on 4/4 checks (`reports/regression_gate.md`). `.github/workflows/ci.yml` (self-hosted runner) is written but not pushed: the gh token lacks the `workflow` scope |
 | 6 Data quality | `data-v2` tag, v1-vs-v2 table with CIs, flagging precision | met | review done by the model (Claude), not a human; CVAT export provided but CVAT not hosted; SAM box tightening not used |
 | 7 Extensions | optional | not started | |

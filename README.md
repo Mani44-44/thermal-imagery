@@ -12,7 +12,7 @@ See [PLAN.md](PLAN.md) for the phased plan.
 | RGB only | 0.880 / 0.875 | 0.514 / 0.515 | 0.840 | 0.767 | 33.3 ms |
 | **thermal only** | **0.960 / 0.964** | **0.685 / 0.679** | **0.957** | 0.800 | 31.8 ms |
 | early fusion (4-channel) | 0.949 / 0.947 | 0.617 / 0.621 | 0.943 | 0.756 | 32.6 ms |
-| late fusion (RGB+thermal, NMS) | 0.935 | 0.669 | 0.923 | **0.814** | ≈2× single |
+| late fusion (RGB+thermal, WBF) | 0.957 | 0.681 | 0.956 | 0.800 | 68.0 ms |
 | thermal, corrected labels (v2) | 0.958 / 0.960 | 0.673 / 0.681 | 0.960 | | 31.8 ms |
 
 Two seeds per arm (s1 / s2); RT-DETRv2-R18, 24 epochs, 2×T4 on Kaggle; latency is local RTX 4050, fp32,
@@ -22,7 +22,8 @@ batch 1. CIs (location-level bootstrap) and per-location tables are in
 - **Thermal alone wins.** It is 8 mAP@0.5 points better than RGB overall and 12 points better in the dark,
   with tight CIs. LLVIP is a night-time dataset and pedestrians are hot.
 - **Fusion does not help here.** Early fusion is 1.2 points below thermal (CI excludes zero) and loses more
-  at mAP@0.5:0.95. Late fusion helps only on small boxes, at roughly double the compute.
+  at mAP@0.5:0.95. Tuned late fusion (WBF, weighted 3:1 toward thermal) matches thermal alone within
+  0.003 mAP@0.5 but costs two forward passes (68 ms vs 32 ms).
 - **The label-error loop found real errors but they didn't move the metric.** 17% of the 250 flagged images
   had a confirmed error (47% for "missing box" flags). Retraining on the corrected labels changed mAP by
   less than the seed spread. See [reports/data_quality.md](reports/data_quality.md). The review was done by

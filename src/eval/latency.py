@@ -5,6 +5,7 @@ for late fusion, box fusion, at batch size 1 after a warmup. Images are decoded 
 I/O excluded) and cycled. Reports p50/p95/mean in ms plus device and precision.
 
     uv run python -m src.eval.latency --run runs/rgb_s1/best --modality rgb
+    uv run python -m src.eval.latency --late runs/late_s1/run.json   # both models + fusion, sequential
 """
 
 import argparse
@@ -61,14 +62,34 @@ def measure(stages: list[tuple], fuse=None, n_images: int = 32, warmup: int = 50
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run", required=True, help="model dir or HF checkpoint")
-    parser.add_argument("--modality", choices=MODALITIES, required=True)
+    parser.add_argument("--run", help="model dir or HF checkpoint")
+    parser.add_argument("--modality", choices=MODALITIES)
+    parser.add_argument("--late", type=Path, help="late-fusion run.json: time RGB + thermal passes + fusion")
     parser.add_argument("--amp", choices=["bf16", "fp16", "fp32"], default="fp32",
                         help="fp32 is fastest at batch 1 here: the HF model is launch-bound, autocast adds casts")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    model = load_model(args.run, args.modality, coco80=False)
-    res = measure([(model, args.modality)], amp=None if args.amp == "fp32" else args.amp)
+    amp = None if args.amp == "fp32" else args.amp
+    if args.late:
+        from src.fusion.late import fuse_image
+        cfg = json.loads(args.late.read_text())
+        root = Path(__file__).resolve().parents[2]
+        stages = [(load_model(str(root / cfg[k] / "best"), m, coco80=False), m)
+                  for k, m in (("rgb_run", "rgb"), ("thermal_run", "thermal"))]
+        fusion = cfg["fusion"]
+        res = measure(stages, fuse=lambda outs: fuse_image(outs[0], outs[1], **fusion), amp=amp)
+        res["mode"] = "sequential, both models + fusion"
+        # One GPU: "parallel" is the lower bound max(single model) + fusion; fusion is timed alone on CPU.
+        rgb_out, th_out = [[{"bbox": [100.0 * i, 100.0, 50.0, 120.0], "score": 0.9 - 0.008 * i} for i in range(100)]] * 2
+        t = []
+        for _ in range(200):
+            t0 = time.perf_counter()
+            fuse_image(rgb_out, th_out, **fusion)
+            t.append((time.perf_counter() - t0) * 1000)
+        res["fusion_only_p50_ms"] = round(float(np.percentile(t, 50)), 3)
+    else:
+        model = load_model(args.run, args.modality, coco80=False)
+        res = measure([(model, args.modality)], amp=amp)
     print(json.dumps(res))
     if args.out:
         args.out.write_text(json.dumps(res, indent=1))

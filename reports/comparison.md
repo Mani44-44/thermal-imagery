@@ -11,6 +11,7 @@
 | tir-fused4-s1 | 0.949 | [0.931, 0.962] | 0.617 | [0.553, 0.676] | 0.902 | 0.889 | 32.6 | 38.8 |
 | tir-fused4-s2 | 0.947 | [0.930, 0.963] | 0.621 | [0.564, 0.673] | 0.881 | 0.887 | 32.6 | 38.8 |
 | late-nms-s1 | 0.935 | [0.919, 0.951] | 0.669 | [0.591, 0.729] | 0.687 | 0.943 | – | – |
+| late-wbf-s1 | 0.957 | [0.949, 0.965] | 0.681 | [0.613, 0.739] | 0.971 | 0.871 | 68.0 | 79.4 |
 
 P/R at confidence ≥ 0.5, IoU 0.5. CIs: location-level bootstrap (1000 resamples).
 
@@ -25,6 +26,7 @@ P/R at confidence ≥ 0.5, IoU 0.5. CIs: location-level bootstrap (1000 resample
 | tir-fused4-s1 | 0.943 / 0.600 | 0.953 / 0.607 | 0.953 / 0.649 |
 | tir-fused4-s2 | 0.944 / 0.610 | 0.952 / 0.616 | 0.950 / 0.645 |
 | late-nms-s1 | 0.923 / 0.629 | 0.936 / 0.650 | 0.945 / 0.721 |
+| late-wbf-s1 | 0.956 / 0.651 | 0.959 / 0.664 | 0.960 / 0.728 |
 
 ### By box height (mAP@0.5): small <150 px, medium 150–250, large ≥250
 
@@ -37,6 +39,7 @@ P/R at confidence ≥ 0.5, IoU 0.5. CIs: location-level bootstrap (1000 resample
 | tir-fused4-s1 | 0.756 | 0.926 | 0.986 | 0.950 |
 | tir-fused4-s2 | 0.774 | 0.919 | 0.986 | 0.948 |
 | late-nms-s1 | 0.814 | 0.934 | 0.973 | 0.935 |
+| late-wbf-s1 | 0.800 | 0.952 | 0.984 | 0.957 |
 
 ### By location (mAP@0.5)
 
@@ -49,6 +52,7 @@ P/R at confidence ≥ 0.5, IoU 0.5. CIs: location-level bootstrap (1000 resample
 | tir-fused4-s1 | 0.952 | 0.969 | 0.967 | 0.937 | 0.973 | 0.895 | 0.971 |
 | tir-fused4-s2 | 0.944 | 0.973 | 0.965 | 0.939 | 0.970 | 0.895 | 0.980 |
 | late-nms-s1 | 0.945 | 0.941 | 0.949 | 0.947 | 0.961 | 0.885 | 0.971 |
+| late-wbf-s1 | 0.964 | 0.973 | 0.957 | 0.953 | 0.967 | 0.933 | 0.966 |
 
 ### Paired differences vs tir-thermal-s1 (location bootstrap, 95% CI)
 
@@ -60,9 +64,16 @@ P/R at confidence ≥ 0.5, IoU 0.5. CIs: location-level bootstrap (1000 resample
 | tir-fused4-s1 | -0.012 | [-0.021, -0.003] | -0.068 | [-0.089, -0.031] | -0.014 | [-0.036, 0.005] |
 | tir-fused4-s2 | -0.014 | [-0.022, -0.003] | -0.064 | [-0.086, -0.026] | -0.013 | [-0.036, 0.004] |
 | late-nms-s1 | -0.025 | [-0.037, -0.013] | -0.016 | [-0.022, -0.009] | -0.034 | [-0.050, -0.011] |
+| late-wbf-s1 | -0.003 | [-0.005, -0.001] | -0.004 | [-0.008, 0.007] | -0.002 | [-0.008, 0.002] |
 
 Notes:
-- Latency: measured once per architecture on the local RTX 4050 (batch 1, fp32, end to end incl.
-  pre/post-processing); seed-2 models share the seed-1 measurement (identical architecture). Late fusion
-  runs both single-modality models, so its latency is roughly the sum (~65 ms) and is not listed.
-- Late fusion method and IoU threshold were tuned on val only (NMS, IoU 0.7 won over WBF).
+- Latency: measured on the local RTX 4050 (batch 1, fp32, end to end incl. pre/post-processing); seed-2
+  models share the seed-1 measurement (identical architecture). late-wbf-s1 is measured sequentially
+  (RGB pass + thermal pass + fusion; fusion alone is ~2 ms on CPU). On one GPU a parallel run is bounded
+  below by the slower single model plus fusion, about 35 ms; two GPUs or streams would be needed to reach it.
+- Late fusion settings were tuned on val only. The first grid used WBF on all 100 RT-DETR boxes per image,
+  which wrecked WBF (WBF of thermal with itself scored 0.830 vs 0.956 on val), so NMS won (late-nms-s1).
+  Adding a score cut-off to the grid fixed it: the val-best is WBF, weights RGB:thermal 1:3, IoU 0.9,
+  skip 0.1 (late-wbf-s1). The optimum sits at the high-IoU edge of the grid, where WBF rarely merges boxes and mostly
+  re-weights them toward thermal; val gains had flattened (0.635 → 0.642 mAP@0.5:0.95), so the grid
+  was not widened further. Both late-fusion rows are kept for transparency.

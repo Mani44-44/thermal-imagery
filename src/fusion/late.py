@@ -72,14 +72,17 @@ def fuse(rgb_preds, thermal_preds, image_ids, **kw) -> list[dict]:
 def tune(rgb_val, thermal_val, gt_val) -> tuple[dict, list[dict]]:
     ids = [im["id"] for im in gt_val["images"]]
     grid = [{"method": "nms", "iou_thr": t} for t in (0.5, 0.6, 0.7)]
-    grid += [{"method": "wbf", "weights": w, "iou_thr": t}
-             for w, t in itertools.product([(1, 1), (1, 2), (2, 1), (1, 3)], (0.5, 0.55, 0.6, 0.7))]
+    # RT-DETR emits 100 boxes per image, mostly near-zero scores; WBF averages them into the real
+    # boxes (WBF of thermal with itself drops val mAP@0.5 0.956 -> 0.830 at skip 0.001), so the
+    # score cut-off is tuned too.
+    grid += [{"method": "wbf", "weights": w, "iou_thr": t, "skip_thr": k}
+             for w, t, k in itertools.product([(1, 1), (1, 2), (1, 3), (1, 5)], (0.6, 0.7, 0.8, 0.9), (0.05, 0.1, 0.2))]
     results = []
     for cfg in grid:
         s = summarize(list(match_all(gt_val, fuse(rgb_val, thermal_val, ids, **cfg)).values()), 0.5)
         results.append({**cfg, "val_mAP50": s["mAP50"], "val_mAP50_95": s["mAP50_95"]})
     best = max(results, key=lambda r: r["val_mAP50_95"])
-    return {k: best[k] for k in ("method", "weights", "iou_thr") if k in best}, results
+    return {k: best[k] for k in ("method", "weights", "iou_thr", "skip_thr") if k in best}, results
 
 
 def main():
