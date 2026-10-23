@@ -9,6 +9,19 @@
 - No fixed deadline. The phases are sequential, but the deliverable at the end of each phase is usable on its own.
 - Dev machine: Windows 11. Python 3.11 in a pinned env (uv or conda).
 
+## Status (2026-10-23)
+
+| Phase | Exit criteria | Status | Deviations |
+|---|---|---|---|
+| 0 Setup | licences, alignment, DVC raw, lockfile, GPU numbers | met | `docs/licences.md`, `docs/alignment/`, `docs/compute.md` |
+| 1 Data | `dvc repro`, leakage tests, golden manifest, EDA | met except EDA notebook | findings written to `docs/data-checks.md` instead of a notebook |
+| 2 Eval harness | zero-shot scored, metric unit tests, latency | met | `reports/zeroshot.md`, `tests/test_metrics.py` |
+| 3 Baselines | 2 models in DVC with CIs + latency | met | 2 seeds per arm, not 3 (s3 runs skipped/failed; see ledger); training ran on Kaggle, not as a DVC stage; outputs tracked in `results.dvc`, `models/*.dvc` |
+| 4 Fusion | `reports/comparison.md`, numbers traceable to DVC | met | late fusion uses NMS (beat WBF on val); FiftyOne error gallery not produced |
+| 5 Regression/CI | degraded model makes CI fail | met locally; GitHub run pending | `pytest -m regression` fails the fusion model on 4/4 checks (`reports/regression_gate.md`). `.github/workflows/ci.yml` (self-hosted runner) is written but not pushed: the gh token lacks the `workflow` scope |
+| 6 Data quality | `data-v2` tag, v1-vs-v2 table with CIs, flagging precision | met | review done by the model (Claude), not a human; CVAT export provided but CVAT not hosted; SAM box tightening not used |
+| 7 Extensions | optional | not started | |
+
 ## Compute plan
 
 | | Local: RTX 4050 Laptop | Kaggle: T4 ×2 | Kaggle: P100 |
