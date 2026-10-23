@@ -1,0 +1,6 @@
+outs:
+- md5: b96704b9062df6fb8ffafadde6a6a6ce.dir
+  size: 80501790
+  nfiles: 2
+  hash: md5
+  path: thermal_v2_s1

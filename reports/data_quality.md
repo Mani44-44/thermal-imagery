@@ -27,6 +27,20 @@
 | no error | 109 |
 | ambiguous (left unchanged) | 98 |
 
+**Flagging precision: 17% of flagged images (43/250) held a confirmed label error**, with an upper bound
+of 56% if every ambiguous image were an error. By flag type (an image can carry several flags, and the
+verdict is per image, so these overlap):
+
+| Flag | Images | fixed | ambiguous | no error | precision | upper bound |
+|---|---|---|---|---|---|---|
+| missing box | 75 | 35 | 13 | 27 | 0.47 | 0.64 |
+| spurious box | 130 | 17 | 82 | 31 | 0.13 | 0.76 |
+| loose box | 125 | 24 | 28 | 73 | 0.19 | 0.42 |
+
+"Missing box" (a confident out-of-fold detection with no GT) is the only flag type worth reviewing at
+volume. "Spurious" mostly surfaces occluded people that only a human with video context can judge, and
+"loose" mostly surfaces honest disagreement about where a box should end.
+
 Box changes: **29 added, 25 replaced, 7 removed** (30,238 → 30,260 boxes, 0.2% of boxes touched).
 
 Recurring patterns:

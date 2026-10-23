@@ -1,0 +1,6 @@
+outs:
+- md5: d3ac0ff64bb26589dfdd857225628031.dir
+  size: 80502942
+  nfiles: 2
+  hash: md5
+  path: fused4_s1

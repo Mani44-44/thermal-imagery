@@ -1,0 +1,6 @@
+outs:
+- md5: 2e291fcf7c717608ac969286cc7357ed.dir
+  size: 80501790
+  nfiles: 2
+  hash: md5
+  path: rgb_s1
