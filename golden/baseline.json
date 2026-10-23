@@ -1,0 +1,24 @@
+{
+ "description": "CI regression baseline. Change only via scripts/promote.py in a reviewed commit.",
+ "model": {
+  "path": "models/thermal_s1",
+  "modality": "thermal",
+  "name": "thermal_s1",
+  "trained_commit": "30076052bdb543522685ee5c8426ba6a54e201a3"
+ },
+ "set": "golden_ci",
+ "conf": 0.5,
+ "scored_on": "cuda",
+ "metrics": {
+  "mAP50": 0.9558,
+  "mAP50_95": 0.6595,
+  "recall": 0.9003,
+  "dark_mAP50": 0.9482
+ },
+ "tolerance": {
+  "mAP50": 0.01,
+  "mAP50_95": 0.01,
+  "recall": 0.02,
+  "dark_mAP50": 0.02
+ }
+}
